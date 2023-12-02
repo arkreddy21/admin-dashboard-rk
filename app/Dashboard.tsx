@@ -1,23 +1,21 @@
 "use client";
 
-type user = {
-  "id": string;
-  "name": string;
-  "email": string;
-  "role": string;
-}
+import Table from "./components/Table";
 
-export default function Dashboard({users}: {users: user[]}) {
-  
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+};
+
+export default function Dashboard({ users }: { users: User[] }) {
   return (
-    <main className="flex min-h-screen flex-col items-center p-24">
-      {users.map((user) => (
-        <div key={user.id} className="p-2 m-2 bg-slate-100">
-          <p>{user.name}</p>
-          <p>{user.email}</p>
-          <p>{user.role}</p>
-        </div>
-      ))}
+    <main className="flex min-h-screen flex-col p-12">
+      <header className="m-4">
+        <input type="text" placeholder="search" className="border"/>
+      </header>
+      <Table data={users} />
     </main>
   );
 }
