@@ -1,3 +1,4 @@
+"use client";
 import {
   Column,
   Table as ReactTable,
@@ -10,18 +11,18 @@ import {
   OnChangeFn,
   getFilteredRowModel,
 } from "@tanstack/react-table";
-import { useMemo } from "react";
-
-type User = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-};
+import { Pencil2Icon, TrashIcon } from "@radix-ui/react-icons";
+import { Dispatch, SetStateAction, useMemo } from "react";
 
 const columnHelper = createColumnHelper<User>();
 
-export default function Table({ data }: { data: User[] }) {
+interface TableProps {
+  data: User[];
+  filter: string;
+  setFilter: Dispatch<SetStateAction<string>>;
+}
+
+export default function Table({ data, filter, setFilter }: TableProps) {
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -38,6 +39,20 @@ export default function Table({ data }: { data: User[] }) {
       columnHelper.accessor("role", {
         header: "Role",
       }),
+      columnHelper.display({
+        id: "actions",
+        header: "Actions",
+        cell: () => (
+          <div className="flex flex-row gap-2">
+            <button className="border rounded p-1">
+              <Pencil2Icon />
+            </button>
+            <button className="border rounded p-1 text-red-500">
+              <TrashIcon />
+            </button>
+          </div>
+        ),
+      }),
     ],
     []
   );
@@ -53,6 +68,11 @@ export default function Table({ data }: { data: User[] }) {
         pageSize: 10,
       },
     },
+    state: {
+      globalFilter: filter,
+    },
+    onGlobalFilterChange: setFilter,
+    globalFilterFn: "includesString",
   });
 
   return (
