@@ -1,28 +1,34 @@
 "use client";
 import {
-  Column,
-  Table as ReactTable,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
   getPaginationRowModel,
-  ColumnDef,
-  OnChangeFn,
   getFilteredRowModel,
+  RowData,
 } from "@tanstack/react-table";
-import { Pencil2Icon, TrashIcon } from "@radix-ui/react-icons";
-import { Dispatch, SetStateAction, useMemo } from "react";
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
+import EditableRow from "./EditableRow";
+import ActionCell from "./ActionCell";
+import EditableCell from "./EditableCell";
+
+declare module "@tanstack/react-table" {
+  interface TableMeta<TData extends RowData> {
+    updateData: (rowIndex: number, columnId: string, value: unknown) => void;
+    deleteRow: (rowIndex: number) => void;
+  }
+}
 
 const columnHelper = createColumnHelper<User>();
 
 interface TableProps {
-  data: User[];
+  users: User[];
   filter: string;
   setFilter: Dispatch<SetStateAction<string>>;
 }
 
-export default function Table({ data, filter, setFilter }: TableProps) {
+export default function Table({ users, filter, setFilter }: TableProps) {
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -32,30 +38,26 @@ export default function Table({ data, filter, setFilter }: TableProps) {
       }),
       columnHelper.accessor("name", {
         header: "Name",
+        cell: EditableCell,
       }),
       columnHelper.accessor("email", {
         header: "Age",
+        cell: EditableCell,
       }),
       columnHelper.accessor("role", {
         header: "Role",
+        cell: EditableCell,
       }),
       columnHelper.display({
         id: "actions",
         header: "Actions",
-        cell: () => (
-          <div className="flex flex-row gap-2">
-            <button className="border rounded p-1">
-              <Pencil2Icon />
-            </button>
-            <button className="border rounded p-1 text-red-500">
-              <TrashIcon />
-            </button>
-          </div>
-        ),
+        cell: ActionCell,
       }),
     ],
     []
   );
+
+  const [data, setData] = useState(users);
 
   const table = useReactTable({
     data,
@@ -71,9 +73,28 @@ export default function Table({ data, filter, setFilter }: TableProps) {
     state: {
       globalFilter: filter,
     },
+    autoResetPageIndex: false,
     onGlobalFilterChange: setFilter,
     globalFilterFn: "includesString",
+    meta: {
+      updateData: (rowIndex, columnId, value) => {
+        setData((prev) =>
+          prev.map((row, index) =>
+            index === rowIndex ? { ...prev[rowIndex], [columnId]: value } : row
+          )
+        );
+      },
+      deleteRow: (rowIndex) => {
+        setData((prev) => prev.filter((_, index) => index !== rowIndex));
+      },
+    },
   });
+
+  // to prevent displaying empty page when all visible rows are deleted
+  useEffect(() => {
+    table.getState().pagination.pageIndex + 1 > table.getPageCount() &&
+      table.previousPage();
+  }, [table.getPageCount()]);
 
   return (
     <div>
@@ -96,13 +117,7 @@ export default function Table({ data, filter, setFilter }: TableProps) {
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="border-b h-12">
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="p-4">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
+            <EditableRow key={row.id} row={row} />
           ))}
         </tbody>
       </table>

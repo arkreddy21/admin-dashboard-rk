@@ -16,7 +16,7 @@ export default function Dashboard({ users }: { users: User[] }) {
           className="border rounded p-1"
         />
       </header>
-      <Table data={users} filter={filter} setFilter={setFilter} />
+      <Table users={users} filter={filter} setFilter={setFilter} />
     </main>
   );
 }
