@@ -12,11 +12,13 @@ import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 import EditableRow from "./EditableRow";
 import ActionCell from "./ActionCell";
 import EditableCell from "./EditableCell";
+import IndeterminateCheckbox from "./IndeterminateCheckbox";
 
 declare module "@tanstack/react-table" {
   interface TableMeta<TData extends RowData> {
     updateData: (rowIndex: number, columnId: string, value: unknown) => void;
     deleteRow: (rowIndex: number) => void;
+    deleteRows: (rows: {}) => void;
   }
 }
 
@@ -26,15 +28,38 @@ interface TableProps {
   users: User[];
   filter: string;
   setFilter: Dispatch<SetStateAction<string>>;
+  rowSelection: {};
+  setRowSelection: Dispatch<SetStateAction<{}>>;
+  delSelected: boolean;
+  setDelSelected: Dispatch<SetStateAction<boolean>>;
 }
 
-export default function Table({ users, filter, setFilter }: TableProps) {
+export default function Table({
+  users,
+  filter,
+  setFilter,
+  rowSelection,
+  setRowSelection,
+  delSelected,
+  setDelSelected,
+}: TableProps) {
   const columns = useMemo(
     () => [
       columnHelper.display({
         id: "checkbox",
-        header: () => <input type="checkbox" />,
-        cell: () => <input type="checkbox" />,
+        header: ({ table }) => (
+          <IndeterminateCheckbox
+            checked={table.getIsAllPageRowsSelected()}
+            indeterminate={table.getIsSomePageRowsSelected()}
+            onChange={table.getToggleAllPageRowsSelectedHandler()}
+          />
+        ),
+        cell: ({ row }) => (
+          <IndeterminateCheckbox
+            checked={row.getIsSelected()}
+            onChange={row.getToggleSelectedHandler()}
+          />
+        ),
       }),
       columnHelper.accessor("name", {
         header: "Name",
@@ -72,10 +97,13 @@ export default function Table({ users, filter, setFilter }: TableProps) {
     },
     state: {
       globalFilter: filter,
+      rowSelection,
     },
-    autoResetPageIndex: false,
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setFilter,
     globalFilterFn: "includesString",
+    autoResetPageIndex: false,
     meta: {
       updateData: (rowIndex, columnId, value) => {
         setData((prev) =>
@@ -87,6 +115,9 @@ export default function Table({ users, filter, setFilter }: TableProps) {
       deleteRow: (rowIndex) => {
         setData((prev) => prev.filter((_, index) => index !== rowIndex));
       },
+      deleteRows: (rows: {}) => {
+        setData((prev) => prev.filter((_, index) => !(index in rows)));
+      },
     },
   });
 
@@ -95,6 +126,14 @@ export default function Table({ users, filter, setFilter }: TableProps) {
     table.getState().pagination.pageIndex + 1 > table.getPageCount() &&
       table.previousPage();
   }, [table.getPageCount()]);
+
+  useEffect(() => {
+    if (delSelected) {
+      table.options.meta?.deleteRows(rowSelection);
+      setDelSelected(false);
+      setRowSelection({});
+    }
+  }, [delSelected]);
 
   return (
     <div>
@@ -122,54 +161,59 @@ export default function Table({ users, filter, setFilter }: TableProps) {
         </tbody>
       </table>
 
-      <div className="h-2" />
-      <div className="flex items-center gap-2">
-        <button
-          className="border rounded p-1"
-          onClick={() => table.setPageIndex(0)}
-          disabled={!table.getCanPreviousPage()}
-        >
-          {"<<"}
-        </button>
-        <button
-          className="border rounded p-1"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          {"<"}
-        </button>
-
-        {Array.from({ length: table.getPageCount() }, (_, index) => (
+      <div className="mt-4 px-2 flex flex-row justify-between">
+        <div>
+          {Object.keys(rowSelection).length} of{" "}
+          {table.getPreFilteredRowModel().rows.length} row(s) selected
+        </div>
+        <div className="flex items-center gap-2">
           <button
-            key={index + 1}
-            className="border rounded p-1 w-6"
-            onClick={() => table.setPageIndex(index)}
+            className="border rounded p-1"
+            onClick={() => table.setPageIndex(0)}
+            disabled={!table.getCanPreviousPage()}
           >
-            {index + 1}
+            {"<<"}
           </button>
-        ))}
+          <button
+            className="border rounded p-1"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {"<"}
+          </button>
 
-        <button
-          className="border rounded p-1"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          {">"}
-        </button>
-        <button
-          className="border rounded p-1"
-          onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-          disabled={!table.getCanNextPage()}
-        >
-          {">>"}
-        </button>
-        <span className="flex items-center gap-1">
-          <div>Page</div>
-          <strong>
-            {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
-          </strong>
-        </span>
+          {Array.from({ length: table.getPageCount() }, (_, index) => (
+            <button
+              key={index + 1}
+              className="border rounded p-1 w-6"
+              onClick={() => table.setPageIndex(index)}
+            >
+              {index + 1}
+            </button>
+          ))}
+
+          <button
+            className="border rounded p-1"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            {">"}
+          </button>
+          <button
+            className="border rounded p-1"
+            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+            disabled={!table.getCanNextPage()}
+          >
+            {">>"}
+          </button>
+          <span className="flex items-center gap-1">
+            <div>Page</div>
+            <strong>
+              {table.getState().pagination.pageIndex + 1} of{" "}
+              {table.getPageCount()}
+            </strong>
+          </span>
+        </div>
       </div>
     </div>
   );
