@@ -23,6 +23,7 @@ export default function ActionCell(props: ActionCellProps) {
         <>
           <button
             className="border rounded p-1"
+            aria-label="edit row"
             onClick={() => {
               setEditMode(true);
               setUpdate(false);
@@ -32,6 +33,7 @@ export default function ActionCell(props: ActionCellProps) {
           </button>
           <button
             className="border rounded p-1 text-red-500"
+            aria-label="delete row"
             onClick={() => table.options.meta?.deleteRow(row.index)}
           >
             <TrashIcon />
@@ -41,6 +43,7 @@ export default function ActionCell(props: ActionCellProps) {
         <>
           <button
             className="border rounded p-1"
+            aria-label="save"
             onClick={() => {
               setEditMode(false);
               setUpdate(true);
@@ -50,6 +53,7 @@ export default function ActionCell(props: ActionCellProps) {
           </button>
           <button
             className="border rounded p-1"
+            aria-label="cancel"
             onClick={() => {
               setEditMode(false);
               setUpdate(false);

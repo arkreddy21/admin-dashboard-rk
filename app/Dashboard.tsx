@@ -13,17 +13,19 @@ export default function Dashboard({ users }: { users: User[] }) {
 
   return (
     <main className="flex min-h-screen flex-col p-12">
-      <header className="m-4 flex flex-row justify-between">
+      <header className="py-4 flex flex-row justify-between">
         <input
           type="text"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="search"
+          aria-label="search"
           className="border rounded p-1"
         />
         <button
           disabled={Object.keys(rowSelection).length === 0}
-          className="bg-red-500 disabled:bg-red-300 text-white rounded p-2"
+          className="bg-red-500 disabled:bg-red-300 text-white rounded p-3"
+          aria-label="delete selected"
           onClick={() => setDelSelected(true)}
         >
           <TrashIcon />

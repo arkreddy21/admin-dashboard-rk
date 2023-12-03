@@ -38,6 +38,6 @@ export default function EditableCell(props: EditableCellProps) {
   return editMode === false ? (
     <>{value}</>
   ) : (
-    <input value={value} onChange={(e) => setValue(e.target.value)} />
+    <input value={value} onChange={(e) => setValue(e.target.value)} className="border" />
   );
 }
